@@ -56,17 +56,23 @@ public partial class CredentialManagerService
     {
         var passwordOption = new GetPasswordOption();
 
-        var googleIdOption = new GetGoogleIdOption.Builder()
-           .SetFilterByAuthorizedAccounts(getPasswordCredentialOptionsDto.OnlyAuthorizedAccounts)
-           .SetServerClientId(_options.GoogleServerClientId ?? "")
-           .SetNonce(Guid.NewGuid().ToString())
-           .SetAutoSelectEnabled(getPasswordCredentialOptionsDto.IsCredentialAutoSelectEnabled)
-           .SetRequestVerifiedPhoneNumber(getPasswordCredentialOptionsDto.RequestVerifiedPhoneNumber)
-           .Build();
+        var requestBuilder = new GetCredentialRequest.Builder()
+            .AddCredentialOption(passwordOption);
 
-        var getCredentialRequest = new GetCredentialRequest.Builder()
-            .AddCredentialOption(passwordOption)
-            .AddCredentialOption(googleIdOption)
+        if (!string.IsNullOrEmpty(_options.GoogleServerClientId))
+        {
+            var googleIdOption = new GetGoogleIdOption.Builder()
+               .SetFilterByAuthorizedAccounts(getPasswordCredentialOptionsDto.OnlyAuthorizedAccounts)
+               .SetServerClientId(_options.GoogleServerClientId)
+               .SetNonce(Guid.NewGuid().ToString())
+               .SetAutoSelectEnabled(getPasswordCredentialOptionsDto.IsCredentialAutoSelectEnabled)
+               .SetRequestVerifiedPhoneNumber(getPasswordCredentialOptionsDto.RequestVerifiedPhoneNumber)
+               .Build();
+
+            requestBuilder.AddCredentialOption(googleIdOption);
+        }
+
+        var getCredentialRequest = requestBuilder
             .SetPreferIdentityDocUi(getPasswordCredentialOptionsDto.PreferIdentityDocUi)
             .SetPreferImmediatelyAvailableCredentials(getPasswordCredentialOptionsDto.PreferImmediatelyAvailableCredentials)
             .Build();
@@ -111,7 +117,15 @@ public partial class CredentialManagerService
 
     private async Task<CredentialManagerResultDto<CredentialDto>> HandleGoogleSignIn(CancellationToken cancellationToken)
     {
-        var signInWithGoogleOption = new GetSignInWithGoogleOption(_options.GoogleServerClientId ?? "", "", Guid.NewGuid().ToString());
+        if (string.IsNullOrEmpty(_options.GoogleServerClientId))
+        {
+            return new CredentialManagerResultDto<CredentialDto>
+            {
+                ErrorMessage = "Google Sign-In requires GoogleServerClientId to be configured"
+            };
+        }
+
+        var signInWithGoogleOption = new GetSignInWithGoogleOption(_options.GoogleServerClientId, "", Guid.NewGuid().ToString());
 
         var getCredentialRequest = new GetCredentialRequest.Builder()
             .AddCredentialOption(signInWithGoogleOption)
@@ -190,10 +204,19 @@ public partial class CredentialManagerService
                           $"?client_id={Uri.EscapeDataString(_options.AppleServiceId)}" +
                           $"&redirect_uri={Uri.EscapeDataString(_options.AppleRedirectUri)}" +
                           $"&response_type=code%20id_token&scope=name%20email" +
-                          $"&response_mode=form_post&state={state}&nonce={nonce}";
+                          $"&response_mode=fragment&state={state}&nonce={nonce}";
 
             var result = await WebAuthenticator.Default.AuthenticateAsync(
                 new Uri(authUrl), new Uri(_options.Android.AppleCallbackScheme));
+
+            var returnedState = result.Properties.GetValueOrDefault("state");
+            if (returnedState != state)
+            {
+                return new CredentialManagerResultDto<CredentialDto>
+                {
+                    ErrorMessage = "Apple Sign-In state mismatch — possible CSRF attack"
+                };
+            }
 
             var idToken = result.IdToken ?? result.Properties.GetValueOrDefault("id_token");
             if (string.IsNullOrEmpty(idToken))

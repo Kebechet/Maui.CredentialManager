@@ -1,4 +1,5 @@
 using AuthenticationServices;
+using Foundation;
 using Maui.CredentialManager.Models;
 using Maui.CredentialManager.Models.Options;
 using Maui.CredentialManager.Platforms.iOS.Services;
@@ -20,8 +21,12 @@ public partial class CredentialManagerService
     {
         try
         {
+            var keychainServer = _options.Ios.KeychainServer
+                ?? NSBundle.MainBundle.BundleIdentifier
+                ?? "default";
+
             var status = _credentialManagerIosService.StorePassword(
-                _options.Ios.GoogleRedirectUri ?? "default",
+                keychainServer,
                 passwordCredential.Id,
                 passwordCredential.Password);
 
@@ -178,10 +183,19 @@ public partial class CredentialManagerService
                           $"?client_id={Uri.EscapeDataString(_options.AppleServiceId)}" +
                           $"&redirect_uri={Uri.EscapeDataString(_options.AppleRedirectUri)}" +
                           $"&response_type=code%20id_token&scope=name%20email" +
-                          $"&response_mode=form_post&state={state}&nonce={nonce}";
+                          $"&response_mode=fragment&state={state}&nonce={nonce}";
 
             var result = await WebAuthenticator.Default.AuthenticateAsync(
                 new Uri(authUrl), new Uri(_options.Ios.AppleCallbackScheme));
+
+            var returnedState = result.Properties.GetValueOrDefault("state");
+            if (returnedState != state)
+            {
+                return new CredentialManagerResultDto<CredentialDto>
+                {
+                    ErrorMessage = "Apple Sign-In state mismatch — possible CSRF attack"
+                };
+            }
 
             var idToken = result.IdToken ?? result.Properties.GetValueOrDefault("id_token");
             if (string.IsNullOrEmpty(idToken))

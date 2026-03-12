@@ -71,6 +71,12 @@ public class AndroidCredentialOptions
 public class IosCredentialOptions
 {
     /// <summary>
+    /// Server identifier used for Keychain password storage.
+    /// Defaults to the app bundle ID if not set.
+    /// </summary>
+    public string? KeychainServer { get; set; }
+
+    /// <summary>
     /// iOS-specific Google OAuth client ID for browser-based Google authentication.
     /// </summary>
     public string? GoogleClientId { get; set; }
