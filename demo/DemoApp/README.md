@@ -1,6 +1,6 @@
-# DemoApp — Maui.CredentialManagers
+# DemoApp — Maui.CredentialManager
 
-A .NET MAUI Blazor app demonstrating the [`Maui.CredentialManagers`](../../src/Maui.CredentialManagers) library.
+A .NET MAUI Blazor app demonstrating the [`Maui.CredentialManager`](../../src/Maui.CredentialManager) library.
 Targets `net10.0-android` and `net10.0-ios`.
 
 ## Features demonstrated

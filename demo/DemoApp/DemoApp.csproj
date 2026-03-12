@@ -23,7 +23,7 @@
         <ApplicationTitle>DemoApp</ApplicationTitle>
 
         <!-- App Identifier -->
-        <ApplicationId>com.kebechet.demoapp</ApplicationId>
+        <ApplicationId>app.horecon</ApplicationId>
 
         <!-- Versions -->
         <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
@@ -58,7 +58,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\src\Maui.CredentialManagers\Maui.CredentialManagers.csproj" />
+      <ProjectReference Include="..\..\src\Maui.CredentialManager\Maui.CredentialManager.csproj" />
     </ItemGroup>
 
 </Project>

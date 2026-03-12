@@ -1,8 +1,8 @@
 [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/kebechet)
 
-# Maui.CredentialManagers
-[![NuGet Version](https://img.shields.io/nuget/v/Kebechet.Maui.CredentialManagers)](https://www.nuget.org/packages/Kebechet.Maui.CredentialManagers/)
-[![NuGet Downloads](https://img.shields.io/nuget/dt/Kebechet.Maui.CredentialManagers)](https://www.nuget.org/packages/Kebechet.Maui.CredentialManagers/)
+# Maui.CredentialManager
+[![NuGet Version](https://img.shields.io/nuget/v/Kebechet.Maui.CredentialManager)](https://www.nuget.org/packages/Kebechet.Maui.CredentialManager/)
+[![NuGet Downloads](https://img.shields.io/nuget/dt/Kebechet.Maui.CredentialManager)](https://www.nuget.org/packages/Kebechet.Maui.CredentialManager/)
 [![Build](https://github.com/Kebechet/Maui.CredentialManagers/actions/workflows/build.yml/badge.svg)](https://github.com/Kebechet/Maui.CredentialManagers/actions/workflows/build.yml)
 [![codecov](https://codecov.io/gh/Kebechet/Maui.CredentialManagers/graph/badge.svg)](https://codecov.io/gh/Kebechet/Maui.CredentialManagers)
 ![Last updated](https://img.shields.io/github/last-commit/Kebechet/Maui.CredentialManagers/main?label=last%20updated)
@@ -13,7 +13,7 @@ Cross-platform .NET MAUI library for unified credential management on Android an
 ## Installation
 
 ```bash
-dotnet add package Kebechet.Maui.CredentialManagers
+dotnet add package Kebechet.Maui.CredentialManager
 ```
 
 ## Usage

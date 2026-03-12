@@ -1,4 +1,4 @@
-﻿using Maui.CredentialManagers.Extensions;
+﻿using Maui.CredentialManager.Extensions;
 using Microsoft.Extensions.Logging;
 
 namespace DemoApp;

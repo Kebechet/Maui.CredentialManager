@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
 
 env:
-  PROJECT_PATH: src/Maui.CredentialManagers/Maui.CredentialManagers.csproj
-  SOLUTION_PATH: src/Maui.CredentialManagers.slnx
-  PACKAGE_NAME: Kebechet.Maui.CredentialManagers
+  PROJECT_PATH: src/Maui.CredentialManager/Maui.CredentialManager.csproj
+  SOLUTION_PATH: src/Maui.CredentialManager.slnx
+  PACKAGE_NAME: Kebechet.Maui.CredentialManager
   DOTNET_VERSION: '10.0.x'
   BUILD_CONFIGURATION: Release
   OUTPUT_PATH: ./nupkg

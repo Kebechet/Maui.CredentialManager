@@ -1,5 +1,5 @@
 <Solution>
-  <Project Path="../src/Maui.CredentialManagers/Maui.CredentialManagers.csproj" />
+  <Project Path="../src/Maui.CredentialManager/Maui.CredentialManager.csproj" />
   <Project Path="DemoApp/DemoApp.csproj">
     <Deploy />
   </Project>

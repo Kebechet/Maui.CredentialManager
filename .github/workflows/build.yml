@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 env:
-  SOLUTION_PATH: src/Maui.CredentialManagers.slnx
+  SOLUTION_PATH: src/Maui.CredentialManager.slnx
   DOTNET_VERSION: '10.0.x'
   BUILD_CONFIGURATION: Release
 
