@@ -1,6 +1,7 @@
-﻿using AndroidX.Credentials;
+using AndroidX.Credentials;
 using Maui.CredentialManagers.Models;
 using Maui.CredentialManagers.Models.Options;
+using Maui.CredentialManagers.Platforms.Android.Services;
 using Xamarin.GoogleAndroid.Libraries.Identity.GoogleId;
 
 namespace Maui.CredentialManagers.Services;
@@ -9,6 +10,14 @@ namespace Maui.CredentialManagers.Services;
 //https://developer.android.com/reference/androidx/credentials/CredentialManager
 public partial class CredentialManagerService
 {
+    private readonly CredentialManagerAndroidService _credentialManagerAndroidService;
+
+    public CredentialManagerService(CredentialManagerAndroidService credentialManagerAndroidService, CredentialManagerOptions options)
+    {
+        _credentialManagerAndroidService = credentialManagerAndroidService;
+        _options = options;
+    }
+
     public async partial Task<CredentialManagerResultDto<bool>> CreatePasswordCredential(PasswordCredentialDto passwordCredential, CancellationToken cancellationToken)
     {
         var createPasswordRequest = new CreatePasswordRequest(passwordCredential.Id, passwordCredential.Password);
@@ -49,7 +58,7 @@ public partial class CredentialManagerService
 
         var googleIdOption = new GetGoogleIdOption.Builder()
            .SetFilterByAuthorizedAccounts(getPasswordCredentialOptionsDto.OnlyAuthorizedAccounts)
-           .SetServerClientId(_googleServerClientId)
+           .SetServerClientId(_options.GoogleServerClientId ?? "")
            .SetNonce(Guid.NewGuid().ToString())
            .SetAutoSelectEnabled(getPasswordCredentialOptionsDto.IsCredentialAutoSelectEnabled)
            .SetRequestVerifiedPhoneNumber(getPasswordCredentialOptionsDto.RequestVerifiedPhoneNumber)
@@ -66,15 +75,167 @@ public partial class CredentialManagerService
     }
 
     //https://developers.google.com/identity/android-credential-manager/android/reference/com/google/android/libraries/identity/googleid/GetSignInWithGoogleOption
-    public async partial Task<CredentialManagerResultDto<CredentialDto>> ContinueWithSso(CancellationToken cancellationToken)
+    public async partial Task<CredentialManagerResultDto<CredentialDto>> ContinueWithSso(SsoProvider provider, CancellationToken cancellationToken)
     {
-        var signInWithGoogleOption = new GetSignInWithGoogleOption(_googleServerClientId, "", Guid.NewGuid().ToString());
+        var resolvedProvider = provider == SsoProvider.PlatformDefault
+            ? SsoProvider.Google
+            : provider;
+
+        return resolvedProvider switch
+        {
+            SsoProvider.Google => _options.GoogleOnAndroid switch
+            {
+                SsoAuthMethod.Disabled => new CredentialManagerResultDto<CredentialDto>
+                {
+                    ErrorMessage = "Google SSO is disabled on Android"
+                },
+                SsoAuthMethod.Browser => await HandleGoogleSignInBrowser(cancellationToken),
+                _ => await HandleGoogleSignIn(cancellationToken)
+            },
+            SsoProvider.Apple => _options.AppleOnAndroid switch
+            {
+                SsoAuthMethod.Disabled => new CredentialManagerResultDto<CredentialDto>
+                {
+                    ErrorMessage = "Apple SSO is disabled on Android"
+                },
+                SsoAuthMethod.Native => new CredentialManagerResultDto<CredentialDto>
+                {
+                    ErrorMessage = "Native Apple Sign-In is not supported on Android. Use SsoAuthMethod.Browser instead."
+                },
+                _ => await HandleAppleSignIn(cancellationToken)
+            },
+            _ => new CredentialManagerResultDto<CredentialDto>
+            {
+                ErrorMessage = $"Unsupported SSO provider: {resolvedProvider}"
+            }
+        };
+    }
+
+    public async partial Task<CredentialManagerResultDto<bool>> ClearCredentialState(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _credentialManagerAndroidService.ClearCredentialState(cancellationToken);
+            return new CredentialManagerResultDto<bool> { Data = true };
+        }
+        catch (Exception e)
+        {
+            return new CredentialManagerResultDto<bool> { ErrorMessage = e.Message };
+        }
+    }
+
+    private async Task<CredentialManagerResultDto<CredentialDto>> HandleGoogleSignIn(CancellationToken cancellationToken)
+    {
+        var signInWithGoogleOption = new GetSignInWithGoogleOption(_options.GoogleServerClientId ?? "", "", Guid.NewGuid().ToString());
 
         var getCredentialRequest = new GetCredentialRequest.Builder()
             .AddCredentialOption(signInWithGoogleOption)
             .Build();
 
         return await ProcessGetCredentialRequest(getCredentialRequest, cancellationToken);
+    }
+
+    private async Task<CredentialManagerResultDto<CredentialDto>> HandleGoogleSignInBrowser(CancellationToken cancellationToken)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(_options.GoogleServerClientId) ||
+                string.IsNullOrEmpty(_options.GoogleAndroidRedirectUri) ||
+                string.IsNullOrEmpty(_options.GoogleAndroidCallbackScheme))
+            {
+                return new CredentialManagerResultDto<CredentialDto>
+                {
+                    ErrorMessage = "Google Sign-In via browser on Android requires GoogleServerClientId, GoogleAndroidRedirectUri, and GoogleAndroidCallbackScheme to be configured"
+                };
+            }
+
+            var nonce = Guid.NewGuid().ToString();
+            var authUrl = $"https://accounts.google.com/o/oauth2/v2/auth" +
+                          $"?client_id={Uri.EscapeDataString(_options.GoogleServerClientId)}" +
+                          $"&redirect_uri={Uri.EscapeDataString(_options.GoogleAndroidRedirectUri)}" +
+                          $"&response_type=code&scope=openid%20email%20profile&nonce={nonce}";
+
+            var result = await WebAuthenticator.Default.AuthenticateAsync(
+                new Uri(authUrl), new Uri(_options.GoogleAndroidCallbackScheme));
+
+            var idToken = result.IdToken ?? result.AccessToken;
+            if (string.IsNullOrEmpty(idToken))
+            {
+                return new CredentialManagerResultDto<CredentialDto>
+                {
+                    ErrorMessage = "Google Sign-In did not return a valid token"
+                };
+            }
+
+            return new CredentialManagerResultDto<CredentialDto>
+            {
+                Data = new CredentialDto
+                {
+                    GoogleIdTokenCredential = new GoogleIdTokenCredentialDto
+                    {
+                        Id = result.Properties.GetValueOrDefault("email") ?? "",
+                        IdToken = idToken
+                    }
+                }
+            };
+        }
+        catch (Exception e)
+        {
+            return new CredentialManagerResultDto<CredentialDto> { ErrorMessage = e.Message };
+        }
+    }
+
+    private async Task<CredentialManagerResultDto<CredentialDto>> HandleAppleSignIn(CancellationToken cancellationToken)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(_options.AppleServiceId) ||
+                string.IsNullOrEmpty(_options.AppleRedirectUri) ||
+                string.IsNullOrEmpty(_options.AppleAndroidCallbackScheme))
+            {
+                return new CredentialManagerResultDto<CredentialDto>
+                {
+                    ErrorMessage = "Apple Sign-In on Android requires AppleServiceId, AppleRedirectUri, and AppleAndroidCallbackScheme to be configured"
+                };
+            }
+
+            var state = Guid.NewGuid().ToString();
+            var nonce = Guid.NewGuid().ToString();
+            var authUrl = $"https://appleid.apple.com/auth/authorize" +
+                          $"?client_id={Uri.EscapeDataString(_options.AppleServiceId)}" +
+                          $"&redirect_uri={Uri.EscapeDataString(_options.AppleRedirectUri)}" +
+                          $"&response_type=code%20id_token&scope=name%20email" +
+                          $"&response_mode=form_post&state={state}&nonce={nonce}";
+
+            var result = await WebAuthenticator.Default.AuthenticateAsync(
+                new Uri(authUrl), new Uri(_options.AppleAndroidCallbackScheme));
+
+            var idToken = result.IdToken ?? result.Properties.GetValueOrDefault("id_token");
+            if (string.IsNullOrEmpty(idToken))
+            {
+                return new CredentialManagerResultDto<CredentialDto>
+                {
+                    ErrorMessage = "Apple Sign-In did not return a valid token"
+                };
+            }
+
+            return new CredentialManagerResultDto<CredentialDto>
+            {
+                Data = new CredentialDto
+                {
+                    AppleIdCredential = new AppleIdCredentialDto
+                    {
+                        UserId = result.Properties.GetValueOrDefault("user") ?? "",
+                        IdToken = idToken,
+                        Email = result.Properties.GetValueOrDefault("email")
+                    }
+                }
+            };
+        }
+        catch (Exception e)
+        {
+            return new CredentialManagerResultDto<CredentialDto> { ErrorMessage = e.Message };
+        }
     }
 
     private async Task<CredentialManagerResultDto<CredentialDto>> ProcessGetCredentialRequest(GetCredentialRequest getCredentialRequest, CancellationToken cancellationToken)
