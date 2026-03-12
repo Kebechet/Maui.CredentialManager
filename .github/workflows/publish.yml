@@ -33,7 +33,7 @@ jobs:
       - name: Get version from csproj
         id: version
         run: |
-          VERSION=$(grep -oP '(?<=<Version>)[^<]+' ${{ env.PROJECT_PATH }})
+          VERSION=$(dotnet msbuild ${{ env.PROJECT_PATH }} -nologo -getProperty:Version | tr -d '[:space:]')
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Version: $VERSION"
 
