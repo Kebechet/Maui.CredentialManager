@@ -21,7 +21,7 @@ public partial class CredentialManagerService
         try
         {
             var status = _credentialManagerIosService.StorePassword(
-                _options.GoogleIosRedirectUri ?? "default",
+                _options.Ios.GoogleRedirectUri ?? "default",
                 passwordCredential.Id,
                 passwordCredential.Password);
 
@@ -89,27 +89,12 @@ public partial class CredentialManagerService
 
         return resolvedProvider switch
         {
-            SsoProvider.Apple => _options.AppleOnIos switch
+            SsoProvider.Apple => _options.Ios.AppleAuthMethod switch
             {
-                SsoAuthMethod.Disabled => new CredentialManagerResultDto<CredentialDto>
-                {
-                    ErrorMessage = "Apple SSO is disabled on iOS"
-                },
                 SsoAuthMethod.Browser => await HandleAppleSignInBrowser(cancellationToken),
                 _ => await HandleAppleSignIn(cancellationToken)
             },
-            SsoProvider.Google => _options.GoogleOnIos switch
-            {
-                SsoAuthMethod.Disabled => new CredentialManagerResultDto<CredentialDto>
-                {
-                    ErrorMessage = "Google SSO is disabled on iOS"
-                },
-                SsoAuthMethod.Native => new CredentialManagerResultDto<CredentialDto>
-                {
-                    ErrorMessage = "Native Google Sign-In is not supported on iOS. Use SsoAuthMethod.Browser instead."
-                },
-                _ => await HandleGoogleSignIn(cancellationToken)
-            },
+            SsoProvider.Google => await HandleGoogleSignIn(cancellationToken),
             _ => new CredentialManagerResultDto<CredentialDto>
             {
                 ErrorMessage = $"Unsupported SSO provider: {resolvedProvider}"
@@ -179,11 +164,11 @@ public partial class CredentialManagerService
         {
             if (string.IsNullOrEmpty(_options.AppleServiceId) ||
                 string.IsNullOrEmpty(_options.AppleRedirectUri) ||
-                string.IsNullOrEmpty(_options.AppleIosCallbackScheme))
+                string.IsNullOrEmpty(_options.Ios.AppleCallbackScheme))
             {
                 return new CredentialManagerResultDto<CredentialDto>
                 {
-                    ErrorMessage = "Apple Sign-In via browser on iOS requires AppleServiceId, AppleRedirectUri, and AppleIosCallbackScheme to be configured"
+                    ErrorMessage = "Apple Sign-In via browser on iOS requires AppleServiceId, AppleRedirectUri, and Ios.AppleCallbackScheme to be configured"
                 };
             }
 
@@ -196,7 +181,7 @@ public partial class CredentialManagerService
                           $"&response_mode=form_post&state={state}&nonce={nonce}";
 
             var result = await WebAuthenticator.Default.AuthenticateAsync(
-                new Uri(authUrl), new Uri(_options.AppleIosCallbackScheme));
+                new Uri(authUrl), new Uri(_options.Ios.AppleCallbackScheme));
 
             var idToken = result.IdToken ?? result.Properties.GetValueOrDefault("id_token");
             if (string.IsNullOrEmpty(idToken))
@@ -231,22 +216,22 @@ public partial class CredentialManagerService
     {
         try
         {
-            if (string.IsNullOrEmpty(_options.GoogleIosClientId) || string.IsNullOrEmpty(_options.GoogleIosRedirectUri))
+            if (string.IsNullOrEmpty(_options.Ios.GoogleClientId) || string.IsNullOrEmpty(_options.Ios.GoogleRedirectUri))
             {
                 return new CredentialManagerResultDto<CredentialDto>
                 {
-                    ErrorMessage = "Google Sign-In on iOS requires GoogleIosClientId and GoogleIosRedirectUri to be configured"
+                    ErrorMessage = "Google Sign-In on iOS requires Ios.GoogleClientId and Ios.GoogleRedirectUri to be configured"
                 };
             }
 
             var nonce = Guid.NewGuid().ToString();
             var authUrl = $"https://accounts.google.com/o/oauth2/v2/auth" +
-                          $"?client_id={Uri.EscapeDataString(_options.GoogleIosClientId)}" +
-                          $"&redirect_uri={Uri.EscapeDataString(_options.GoogleIosRedirectUri)}" +
+                          $"?client_id={Uri.EscapeDataString(_options.Ios.GoogleClientId)}" +
+                          $"&redirect_uri={Uri.EscapeDataString(_options.Ios.GoogleRedirectUri)}" +
                           $"&response_type=code&scope=openid%20email%20profile&nonce={nonce}";
 
             var result = await WebAuthenticator.Default.AuthenticateAsync(
-                new Uri(authUrl), new Uri(_options.GoogleIosRedirectUri));
+                new Uri(authUrl), new Uri(_options.Ios.GoogleRedirectUri));
 
             var idToken = result.IdToken ?? result.AccessToken;
             if (string.IsNullOrEmpty(idToken))

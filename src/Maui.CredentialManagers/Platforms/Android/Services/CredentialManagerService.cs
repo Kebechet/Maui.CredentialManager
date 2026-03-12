@@ -83,27 +83,12 @@ public partial class CredentialManagerService
 
         return resolvedProvider switch
         {
-            SsoProvider.Google => _options.GoogleOnAndroid switch
+            SsoProvider.Google => _options.Android.GoogleAuthMethod switch
             {
-                SsoAuthMethod.Disabled => new CredentialManagerResultDto<CredentialDto>
-                {
-                    ErrorMessage = "Google SSO is disabled on Android"
-                },
                 SsoAuthMethod.Browser => await HandleGoogleSignInBrowser(cancellationToken),
                 _ => await HandleGoogleSignIn(cancellationToken)
             },
-            SsoProvider.Apple => _options.AppleOnAndroid switch
-            {
-                SsoAuthMethod.Disabled => new CredentialManagerResultDto<CredentialDto>
-                {
-                    ErrorMessage = "Apple SSO is disabled on Android"
-                },
-                SsoAuthMethod.Native => new CredentialManagerResultDto<CredentialDto>
-                {
-                    ErrorMessage = "Native Apple Sign-In is not supported on Android. Use SsoAuthMethod.Browser instead."
-                },
-                _ => await HandleAppleSignIn(cancellationToken)
-            },
+            SsoProvider.Apple => await HandleAppleSignIn(cancellationToken),
             _ => new CredentialManagerResultDto<CredentialDto>
             {
                 ErrorMessage = $"Unsupported SSO provider: {resolvedProvider}"
@@ -140,23 +125,23 @@ public partial class CredentialManagerService
         try
         {
             if (string.IsNullOrEmpty(_options.GoogleServerClientId) ||
-                string.IsNullOrEmpty(_options.GoogleAndroidRedirectUri) ||
-                string.IsNullOrEmpty(_options.GoogleAndroidCallbackScheme))
+                string.IsNullOrEmpty(_options.Android.GoogleRedirectUri) ||
+                string.IsNullOrEmpty(_options.Android.GoogleCallbackScheme))
             {
                 return new CredentialManagerResultDto<CredentialDto>
                 {
-                    ErrorMessage = "Google Sign-In via browser on Android requires GoogleServerClientId, GoogleAndroidRedirectUri, and GoogleAndroidCallbackScheme to be configured"
+                    ErrorMessage = "Google Sign-In via browser on Android requires GoogleServerClientId, Android.GoogleRedirectUri, and Android.GoogleCallbackScheme to be configured"
                 };
             }
 
             var nonce = Guid.NewGuid().ToString();
             var authUrl = $"https://accounts.google.com/o/oauth2/v2/auth" +
                           $"?client_id={Uri.EscapeDataString(_options.GoogleServerClientId)}" +
-                          $"&redirect_uri={Uri.EscapeDataString(_options.GoogleAndroidRedirectUri)}" +
+                          $"&redirect_uri={Uri.EscapeDataString(_options.Android.GoogleRedirectUri)}" +
                           $"&response_type=code&scope=openid%20email%20profile&nonce={nonce}";
 
             var result = await WebAuthenticator.Default.AuthenticateAsync(
-                new Uri(authUrl), new Uri(_options.GoogleAndroidCallbackScheme));
+                new Uri(authUrl), new Uri(_options.Android.GoogleCallbackScheme));
 
             var idToken = result.IdToken ?? result.AccessToken;
             if (string.IsNullOrEmpty(idToken))
@@ -191,11 +176,11 @@ public partial class CredentialManagerService
         {
             if (string.IsNullOrEmpty(_options.AppleServiceId) ||
                 string.IsNullOrEmpty(_options.AppleRedirectUri) ||
-                string.IsNullOrEmpty(_options.AppleAndroidCallbackScheme))
+                string.IsNullOrEmpty(_options.Android.AppleCallbackScheme))
             {
                 return new CredentialManagerResultDto<CredentialDto>
                 {
-                    ErrorMessage = "Apple Sign-In on Android requires AppleServiceId, AppleRedirectUri, and AppleAndroidCallbackScheme to be configured"
+                    ErrorMessage = "Apple Sign-In on Android requires AppleServiceId, AppleRedirectUri, and Android.AppleCallbackScheme to be configured"
                 };
             }
 
@@ -208,7 +193,7 @@ public partial class CredentialManagerService
                           $"&response_mode=form_post&state={state}&nonce={nonce}";
 
             var result = await WebAuthenticator.Default.AuthenticateAsync(
-                new Uri(authUrl), new Uri(_options.AppleAndroidCallbackScheme));
+                new Uri(authUrl), new Uri(_options.Android.AppleCallbackScheme));
 
             var idToken = result.IdToken ?? result.Properties.GetValueOrDefault("id_token");
             if (string.IsNullOrEmpty(idToken))

@@ -25,31 +25,46 @@ All SSO options are set in [`MauiProgram.cs`](MauiProgram.cs) via `AddCredential
 builder.Services.AddCredentialManagerService(options =>
 {
     options.GoogleServerClientId = "your-google-web-client-id";
-    // options.GoogleIosClientId = "your-google-ios-client-id";
-    // options.GoogleIosRedirectUri = "your-redirect-uri";
     // options.AppleServiceId = "your-apple-service-id";
     // options.AppleRedirectUri = "your-apple-redirect-uri";
+
+    // options.Android.GoogleRedirectUri = "your-android-google-redirect-uri";
+    // options.Android.GoogleCallbackScheme = "your-android-google-callback-scheme";
+    // options.Android.AppleCallbackScheme = "your-android-apple-callback-scheme";
+
+    // options.Ios.GoogleClientId = "your-google-ios-client-id";
+    // options.Ios.GoogleRedirectUri = "your-ios-google-redirect-uri";
+    // options.Ios.AppleCallbackScheme = "your-ios-apple-callback-scheme";
 });
 ```
 
-### Google SSO
+### Shared options
 
 | Option | Description |
 |--------|-------------|
 | `GoogleServerClientId` | OAuth 2.0 **Web** client ID from Google Cloud Console. This is the client ID your backend uses to verify tokens. Required for native Android sign-in and the Google ID option in `GetPasswordCredential`. |
-| `GoogleIosClientId` | iOS-specific Google OAuth client ID (for browser flow on iOS). |
-| `GoogleIosRedirectUri` | Redirect URI for iOS browser-based Google auth. |
-| `GoogleAndroidRedirectUri` | Redirect URI for Android browser-based Google auth. |
-| `GoogleAndroidCallbackScheme` | Custom URL scheme for Android browser callback. |
+| `AppleServiceId` | Service ID from the Apple Developer portal. |
+| `AppleRedirectUri` | Redirect URI registered with Apple. |
 
-### Apple SSO
+### Android options (`options.Android.*`)
 
 | Option | Description |
 |--------|-------------|
-| `AppleServiceId` | Service ID from the Apple Developer portal. |
-| `AppleRedirectUri` | Redirect URI registered with Apple. |
-| `AppleAndroidCallbackScheme` | Callback scheme for Apple auth on Android. |
-| `AppleIosCallbackScheme` | Callback scheme for Apple auth on iOS. |
+| `GoogleRedirectUri` | Redirect URI for Android browser-based Google auth. |
+| `GoogleCallbackScheme` | Custom URL scheme for Android browser callback. |
+| `AppleCallbackScheme` | Callback scheme for Apple auth on Android. |
+| `GoogleAuthMethod` | How to handle Google SSO on Android. Default: `Native`. |
+| `AppleAuthMethod` | How to handle Apple SSO on Android. Default: `Browser`. |
+
+### iOS options (`options.Ios.*`)
+
+| Option | Description |
+|--------|-------------|
+| `GoogleClientId` | iOS-specific Google OAuth client ID (for browser flow on iOS). |
+| `GoogleRedirectUri` | Redirect URI for iOS browser-based Google auth. |
+| `AppleCallbackScheme` | Callback scheme for Apple auth on iOS. |
+| `GoogleAuthMethod` | How to handle Google SSO on iOS. Default: `Browser`. |
+| `AppleAuthMethod` | How to handle Apple SSO on iOS. Default: `Native`. |
 
 ### Auth method defaults
 
@@ -58,7 +73,7 @@ builder.Services.AddCredentialManagerService(options =>
 | Google | Native | Browser |
 | Apple | Browser | Native |
 
-Override per-platform via `GoogleOnAndroid`, `AppleOnAndroid`, `GoogleOnIos`, `AppleOnIos`. Accepted values: `Native`, `Browser`, `Disabled`.
+Override per-platform via `Android.GoogleAuthMethod`, `Android.AppleAuthMethod`, `Ios.GoogleAuthMethod`, `Ios.AppleAuthMethod`. Accepted values: `Native`, `Browser`.
 
 ## Password credentials — no SSO setup needed
 

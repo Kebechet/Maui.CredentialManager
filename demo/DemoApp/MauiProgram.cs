@@ -21,8 +21,9 @@ public static class MauiProgram
         {
             // Configure SSO client IDs here when testing SSO flows
             // options.GoogleServerClientId = "your-google-client-id";
-            // options.GoogleIosClientId = "your-google-ios-client-id";
-            // options.GoogleIosRedirectUri = "your-redirect-uri";
+            // options.Ios.GoogleClientId = "your-google-ios-client-id";
+            // options.Ios.GoogleRedirectUri = "your-redirect-uri";
+
             // options.AppleServiceId = "your-apple-service-id";
             // options.AppleRedirectUri = "your-apple-redirect-uri";
         });
