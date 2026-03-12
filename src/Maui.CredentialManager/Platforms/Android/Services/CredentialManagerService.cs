@@ -138,7 +138,7 @@ public partial class CredentialManagerService
             var authUrl = $"https://accounts.google.com/o/oauth2/v2/auth" +
                           $"?client_id={Uri.EscapeDataString(_options.GoogleServerClientId)}" +
                           $"&redirect_uri={Uri.EscapeDataString(_options.Android.GoogleRedirectUri)}" +
-                          $"&response_type=code&scope=openid%20email%20profile&nonce={nonce}";
+                          $"&response_type=id_token&scope=openid%20email%20profile&nonce={nonce}";
 
             var result = await WebAuthenticator.Default.AuthenticateAsync(
                 new Uri(authUrl), new Uri(_options.Android.GoogleCallbackScheme));
