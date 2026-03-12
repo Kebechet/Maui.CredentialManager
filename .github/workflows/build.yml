@@ -1,0 +1,47 @@
+name: Build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  SOLUTION_PATH: src/Maui.CredentialManager.slnx
+  DOTNET_VERSION: '10.0.x'
+  BUILD_CONFIGURATION: Release
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Install MAUI workload
+      run: dotnet workload install maui
+
+    - name: Restore dependencies
+      run: dotnet restore ${{ env.SOLUTION_PATH }}
+
+    - name: Build
+      run: dotnet build ${{ env.SOLUTION_PATH }} --no-restore --configuration ${{ env.BUILD_CONFIGURATION }}
+
+    - name: Test with coverage
+      run: dotnet test ${{ env.SOLUTION_PATH }} --no-build --configuration ${{ env.BUILD_CONFIGURATION }} --collect:"XPlat Code Coverage" --results-directory ./coverage
+
+    - name: Find coverage file
+      id: coverage
+      run: echo "file=$(find ./coverage -name 'coverage.cobertura.xml' | head -1)" >> $GITHUB_OUTPUT
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v5
+      with:
+        files: ${{ steps.coverage.outputs.file }}
+        fail_ci_if_error: false
+        token: ${{ secrets.CODECOV_TOKEN }}

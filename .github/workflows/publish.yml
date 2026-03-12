@@ -1,0 +1,72 @@
+name: Publish to NuGet
+
+on:
+  workflow_dispatch:
+
+env:
+  PROJECT_PATH: src/Maui.CredentialManager/Maui.CredentialManager.csproj
+  SOLUTION_PATH: src/Maui.CredentialManager.slnx
+  PACKAGE_NAME: Kebechet.Maui.CredentialManager
+  DOTNET_VERSION: '10.0.x'
+  BUILD_CONFIGURATION: Release
+  OUTPUT_PATH: ./nupkg
+  NUGET_SOURCE: https://api.nuget.org/v3/index.json
+
+jobs:
+  publish:
+    runs-on: macos-latest
+    permissions:
+      contents: write
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Install MAUI workload
+        run: dotnet workload install maui
+
+      - name: Get version from csproj
+        id: version
+        run: |
+          VERSION=$(dotnet msbuild ${{ env.PROJECT_PATH }} -nologo -getProperty:Version | tr -d '[:space:]')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION"
+
+      - name: Restore dependencies
+        run: dotnet restore ${{ env.SOLUTION_PATH }}
+
+      - name: Build
+        run: dotnet build ${{ env.SOLUTION_PATH }} --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore
+
+      - name: Pack
+        run: dotnet pack ${{ env.PROJECT_PATH }} --configuration ${{ env.BUILD_CONFIGURATION }} --no-build --output ${{ env.OUTPUT_PATH }}
+
+      - name: Publish to NuGet
+        run: dotnet nuget push ${{ env.OUTPUT_PATH }}/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source ${{ env.NUGET_SOURCE }} --skip-duplicate
+
+      - name: Publish to GitHub Packages
+        run: dotnet nuget push ${{ env.OUTPUT_PATH }}/*.nupkg --api-key ${{ secrets.GITHUB_TOKEN }} --source https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json --skip-duplicate
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: v${{ steps.version.outputs.version }}
+          body: |
+            ## ${{ env.PACKAGE_NAME }} v${{ steps.version.outputs.version }}
+
+            ### Installation
+            ```bash
+            dotnet add package ${{ env.PACKAGE_NAME }} --version ${{ steps.version.outputs.version }}
+            ```
+
+            ### Links
+            - [NuGet Package](https://www.nuget.org/packages/${{ env.PACKAGE_NAME }}/${{ steps.version.outputs.version }})
+            - [GitHub](https://github.com/Kebechet/Maui.CredentialManagers)
+          files: ${{ env.OUTPUT_PATH }}/*.nupkg
+          generate_release_notes: true

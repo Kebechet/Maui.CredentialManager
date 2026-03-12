@@ -1,0 +1,240 @@
+.demo-root {
+    max-width: 540px;
+    margin: 0 auto;
+    padding: 24px 16px 48px;
+}
+
+.demo-header {
+    margin-bottom: 28px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+}
+
+.demo-header h1 {
+    font-family: var(--font-mono);
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: -0.3px;
+}
+
+.demo-header p {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+
+.section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 14px;
+}
+
+.section-title {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.section-title .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    display: inline-block;
+}
+
+.field {
+    margin-bottom: 10px;
+}
+
+.field label {
+    display: block;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+    font-family: var(--font-mono);
+}
+
+.field input, .field select {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    color: var(--text);
+    font-size: 14px;
+    font-family: var(--font-body);
+    outline: none;
+    transition: border-color 0.15s;
+}
+
+.field input:focus, .field select:focus {
+    border-color: var(--accent);
+}
+
+.field input::placeholder {
+    color: var(--text-muted);
+    opacity: 0.5;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: var(--font-mono);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    background: var(--surface);
+    color: var(--text);
+    width: 100%;
+    margin-top: 4px;
+}
+
+.btn:active { transform: scale(0.98); }
+
+.btn-primary {
+    background: var(--accent);
+    color: #0e1117;
+    border-color: var(--accent);
+}
+
+.btn-primary:hover { opacity: 0.9; }
+
+.btn-danger {
+    border-color: var(--red);
+    color: var(--red);
+}
+
+.btn-danger:hover {
+    background: var(--red);
+    color: var(--bg);
+}
+
+.btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.sso-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.sso-option {
+    padding: 10px 8px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg);
+    color: var(--text-muted);
+    font-size: 12px;
+    font-family: var(--font-mono);
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.sso-option:hover { border-color: var(--text-muted); }
+
+.sso-option.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(88, 166, 255, 0.08);
+}
+
+.result-panel {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+    margin-top: 20px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.result-panel.success { border-color: var(--green); }
+.result-panel.error { border-color: var(--red); }
+
+.result-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+}
+
+.result-badge {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+
+.result-badge.ok {
+    background: rgba(63, 185, 80, 0.15);
+    color: var(--green);
+}
+
+.result-badge.err {
+    background: rgba(248, 81, 73, 0.15);
+    color: var(--red);
+}
+
+.result-timestamp {
+    color: var(--text-muted);
+    font-size: 11px;
+    margin-left: auto;
+}
+
+.result-row {
+    display: flex;
+    gap: 8px;
+    padding: 2px 0;
+}
+
+.result-key {
+    color: var(--text-muted);
+    min-width: 100px;
+    flex-shrink: 0;
+}
+
+.result-value {
+    color: var(--text);
+    word-break: break-all;
+}
+
+.spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}

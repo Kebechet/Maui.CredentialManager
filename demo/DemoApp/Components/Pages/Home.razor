@@ -1,0 +1,286 @@
+@page "/"
+@using Maui.CredentialManager.Services
+@using Maui.CredentialManager.Models
+@using Maui.CredentialManager.Models.Options
+@inject ICredentialManagerService CredentialManager
+
+
+<div class="demo-root">
+    <div class="demo-header">
+        <h1>Maui.CredentialManager</h1>
+        <p>API testing console</p>
+    </div>
+
+    <!-- Save Password Credential -->
+    <div class="section">
+        <div class="section-title"><span class="dot"></span> Save Password Credential</div>
+        <div class="field">
+            <label>id</label>
+            <input type="text" @bind="username" placeholder="user@example.com" />
+        </div>
+        <div class="field">
+            <label>password</label>
+            <input type="password" @bind="password" placeholder="password" />
+        </div>
+        <button class="btn btn-primary" disabled="@isLoading" @onclick="SaveCredential">
+            @if (isLoading && activeAction == "save") { <span class="spinner"></span> }
+            Save Credential
+        </button>
+    </div>
+
+    <!-- Get Password Credential -->
+    <div class="section">
+        <div class="section-title"><span class="dot"></span> Get Password Credential</div>
+        <button class="btn" disabled="@isLoading" @onclick="GetCredential">
+            @if (isLoading && activeAction == "get") { <span class="spinner"></span> }
+            Get Credential
+        </button>
+    </div>
+
+    <!-- SSO Login -->
+    <div class="section">
+        <div class="section-title"><span class="dot"></span> SSO Login</div>
+        <div class="sso-grid">
+            @foreach (var provider in Enum.GetValues<SsoProvider>())
+            {
+                <div class="sso-option @(selectedProvider == provider ? "active" : "")"
+                     @onclick="() => selectedProvider = provider">
+                    @provider
+                </div>
+            }
+        </div>
+        <button class="btn" disabled="@isLoading" @onclick="ContinueSso">
+            @if (isLoading && activeAction == "sso") { <span class="spinner"></span> }
+            Continue with SSO
+        </button>
+    </div>
+
+    <!-- Clear Credential State -->
+    <div class="section">
+        <div class="section-title"><span class="dot"></span> Clear Credential State</div>
+        <button class="btn btn-danger" disabled="@isLoading" @onclick="ClearState">
+            @if (isLoading && activeAction == "clear") { <span class="spinner"></span> }
+            Clear Credential State
+        </button>
+    </div>
+
+    <!-- Result Display -->
+    @if (resultMessage is not null)
+    {
+        <div class="result-panel @(isSuccess ? "success" : "error")">
+            <div class="result-header">
+                <span class="result-badge @(isSuccess ? "ok" : "err")">@(isSuccess ? "OK" : "ERR")</span>
+                <span class="result-timestamp">@resultTimestamp</span>
+            </div>
+
+            @if (!isSuccess)
+            {
+                <div class="result-row">
+                    <span class="result-key">error</span>
+                    <span class="result-value">@resultMessage</span>
+                </div>
+            }
+            else
+            {
+                <div class="result-row">
+                    <span class="result-key">status</span>
+                    <span class="result-value">@resultMessage</span>
+                </div>
+            }
+
+            @if (resultCredential is not null)
+            {
+                @if (resultCredential.IsPasswordCredential)
+                {
+                    <div class="result-row">
+                        <span class="result-key">type</span>
+                        <span class="result-value">PasswordCredential</span>
+                    </div>
+                    <div class="result-row">
+                        <span class="result-key">id</span>
+                        <span class="result-value">@resultCredential.PasswordCredential!.Id</span>
+                    </div>
+                    <div class="result-row">
+                        <span class="result-key">password</span>
+                        <span class="result-value">@MaskPassword(resultCredential.PasswordCredential.Password)</span>
+                    </div>
+                }
+
+                @if (resultCredential.IsGoogleIdTokenCredential)
+                {
+                    <div class="result-row">
+                        <span class="result-key">type</span>
+                        <span class="result-value">GoogleIdToken</span>
+                    </div>
+                    <div class="result-row">
+                        <span class="result-key">id</span>
+                        <span class="result-value">@resultCredential.GoogleIdTokenCredential!.Id</span>
+                    </div>
+                    <div class="result-row">
+                        <span class="result-key">displayName</span>
+                        <span class="result-value">@resultCredential.GoogleIdTokenCredential.DisplayName</span>
+                    </div>
+                    <div class="result-row">
+                        <span class="result-key">idToken</span>
+                        <span class="result-value">@Truncate(resultCredential.GoogleIdTokenCredential.IdToken, 40)</span>
+                    </div>
+                }
+
+                @if (resultCredential.IsAppleIdCredential)
+                {
+                    <div class="result-row">
+                        <span class="result-key">type</span>
+                        <span class="result-value">AppleIdCredential</span>
+                    </div>
+                    <div class="result-row">
+                        <span class="result-key">userId</span>
+                        <span class="result-value">@resultCredential.AppleIdCredential!.UserId</span>
+                    </div>
+                    <div class="result-row">
+                        <span class="result-key">email</span>
+                        <span class="result-value">@resultCredential.AppleIdCredential.Email</span>
+                    </div>
+                    <div class="result-row">
+                        <span class="result-key">idToken</span>
+                        <span class="result-value">@Truncate(resultCredential.AppleIdCredential.IdToken, 40)</span>
+                    </div>
+                }
+
+                @if (resultCredential.IsPublicKeyCredential)
+                {
+                    <div class="result-row">
+                        <span class="result-key">type</span>
+                        <span class="result-value">PublicKeyCredential</span>
+                    </div>
+                    <div class="result-row">
+                        <span class="result-key">response</span>
+                        <span class="result-value">@Truncate(resultCredential.PublicKeyCredential!.AuthenticationResponseJson, 60)</span>
+                    </div>
+                }
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private string username = "test@gmail.com";
+    private string password = "";
+    private SsoProvider selectedProvider = SsoProvider.PlatformDefault;
+
+    private string? resultMessage;
+    private bool isSuccess;
+    private bool isLoading;
+    private string activeAction = "";
+    private string resultTimestamp = "";
+    private CredentialDto? resultCredential;
+
+    private async Task SaveCredential()
+    {
+        if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
+        {
+            SetResult(false, "Id and password are required");
+            return;
+        }
+
+        await RunAction("save", async ct =>
+        {
+            var dto = new PasswordCredentialDto { Id = username, Password = password };
+            var result = await CredentialManager.CreatePasswordCredential(dto, ct);
+            resultCredential = null;
+
+            if (result.IsSuccess)
+                SetResult(true, "Credential saved");
+            else
+                SetResult(false, result.ErrorMessage ?? "Unknown error");
+        });
+    }
+
+    private async Task GetCredential()
+    {
+        await RunAction("get", async ct =>
+        {
+            var result = await CredentialManager.GetPasswordCredential(ct);
+
+            if (result.IsSuccess && result.Data is not null)
+            {
+                resultCredential = result.Data;
+                SetResult(true, "Credential retrieved");
+            }
+            else
+            {
+                resultCredential = null;
+                SetResult(false, result.ErrorMessage ?? "No credential found");
+            }
+        });
+    }
+
+    private async Task ContinueSso()
+    {
+        await RunAction("sso", async ct =>
+        {
+            var result = await CredentialManager.ContinueWithSso(selectedProvider, ct);
+
+            if (result.IsSuccess && result.Data is not null)
+            {
+                resultCredential = result.Data;
+                SetResult(true, "SSO completed");
+            }
+            else
+            {
+                resultCredential = null;
+                SetResult(false, result.ErrorMessage ?? "SSO failed");
+            }
+        });
+    }
+
+    private async Task ClearState()
+    {
+        await RunAction("clear", async ct =>
+        {
+            var result = await CredentialManager.ClearCredentialState(ct);
+            resultCredential = null;
+
+            if (result.IsSuccess)
+                SetResult(true, "Credential state cleared");
+            else
+                SetResult(false, result.ErrorMessage ?? "Clear failed");
+        });
+    }
+
+    private async Task RunAction(string action, Func<CancellationToken, Task> work)
+    {
+        isLoading = true;
+        activeAction = action;
+        resultMessage = null;
+        resultCredential = null;
+
+        try
+        {
+            await work(CancellationToken.None);
+        }
+        catch (Exception ex)
+        {
+            SetResult(false, ex.Message);
+        }
+        finally
+        {
+            isLoading = false;
+            activeAction = "";
+        }
+    }
+
+    private void SetResult(bool success, string message)
+    {
+        isSuccess = success;
+        resultMessage = message;
+        resultTimestamp = DateTime.Now.ToString("HH:mm:ss");
+    }
+
+    private static string MaskPassword(string pwd) =>
+        pwd.Length <= 2 ? "**" : pwd[0] + new string('*', pwd.Length - 2) + pwd[^1];
+
+    private static string Truncate(string? value, int max) =>
+        string.IsNullOrEmpty(value) ? "-"
+        : value.Length <= max ? value
+        : value[..max] + "...";
+}
