@@ -24,11 +24,13 @@ dotnet add package Kebechet.Maui.CredentialManager
 builder.Services.AddCredentialManagerService(options =>
 {
     options.GoogleServerClientId = "xxx.apps.googleusercontent.com";
-    options.GoogleIosClientId = "yyy.apps.googleusercontent.com";
-    options.GoogleIosRedirectUri = "com.myapp:/oauth2redirect";
     options.AppleServiceId = "com.myapp.auth";
     options.AppleRedirectUri = "https://myserver.com/auth/apple/callback";
-    options.AppleAndroidCallbackScheme = "com.myapp:/applecallback";
+
+    options.Ios.GoogleClientId = "yyy.apps.googleusercontent.com";
+    options.Ios.GoogleRedirectUri = "com.myapp:/oauth2redirect";
+
+    options.Android.AppleCallbackScheme = "com.myapp:/applecallback";
 });
 ```
 

@@ -11,6 +11,8 @@ public interface ICredentialManagerService
     /// <summary>
     /// Stores a password credential in the platform's credential manager.
     /// On Android uses Credential Manager API, on iOS uses Keychain Services.
+    /// Note: On iOS, <see cref="GetPasswordCredential(CancellationToken)"/> uses ASAuthorizationPasswordProvider
+    /// which reads from the same Keychain store — the different APIs are the standard iOS pattern.
     /// </summary>
     /// <param name="passwordCredential">The username and password to store.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
@@ -37,8 +39,10 @@ public interface ICredentialManagerService
 
     /// <summary>
     /// Initiates a Single Sign-On flow with the specified provider.
-    /// The auth method (native SDK or browser) is determined by <see cref="CredentialManagerOptions"/> settings.
     /// <see cref="SsoProvider.PlatformDefault"/> resolves to Google on Android and Apple on iOS.
+    /// Auth method per provider: Google on Android is configurable (native/browser via <see cref="CredentialManagerOptions.Android"/>),
+    /// Apple on iOS is configurable (native/browser via <see cref="CredentialManagerOptions.Ios"/>).
+    /// Google on iOS and Apple on Android are always browser-based (no native SDK available).
     /// </summary>
     /// <param name="provider">The SSO provider to authenticate with.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
