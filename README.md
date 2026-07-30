@@ -3,9 +3,9 @@
 # Maui.CredentialManager
 [![NuGet Version](https://img.shields.io/nuget/v/Kebechet.Maui.CredentialManager)](https://www.nuget.org/packages/Kebechet.Maui.CredentialManager/)
 [![NuGet Downloads](https://img.shields.io/nuget/dt/Kebechet.Maui.CredentialManager)](https://www.nuget.org/packages/Kebechet.Maui.CredentialManager/)
-[![Build](https://github.com/Kebechet/Maui.CredentialManagers/actions/workflows/build.yml/badge.svg)](https://github.com/Kebechet/Maui.CredentialManagers/actions/workflows/build.yml)
-[![codecov](https://codecov.io/gh/Kebechet/Maui.CredentialManagers/graph/badge.svg)](https://codecov.io/gh/Kebechet/Maui.CredentialManagers)
-![Last updated](https://img.shields.io/github/last-commit/Kebechet/Maui.CredentialManagers/main?label=last%20updated)
+[![Build](https://github.com/Kebechet/Maui.CredentialManager/actions/workflows/build.yml/badge.svg)](https://github.com/Kebechet/Maui.CredentialManager/actions/workflows/build.yml)
+[![codecov](https://codecov.io/gh/Kebechet/Maui.CredentialManager/graph/badge.svg)](https://codecov.io/gh/Kebechet/Maui.CredentialManager)
+![Last updated](https://img.shields.io/github/last-commit/Kebechet/Maui.CredentialManager/main?label=last%20updated)
 [![Twitter](https://img.shields.io/twitter/url/https/twitter.com/samuel_sidor.svg?style=social&label=Follow%20samuel_sidor)](https://x.com/samuel_sidor)
 
 Cross-platform .NET MAUI library for unified credential management on Android and iOS.
