@@ -11,6 +11,8 @@ env:
   BUILD_CONFIGURATION: Release
   OUTPUT_PATH: ./nupkg
   NUGET_SOURCE: https://api.nuget.org/v3/index.json
+  # nuget.org profile name (not the email) that owns the trusted publishing policy
+  NUGET_USER: Kebechet
 
 jobs:
   publish:
@@ -18,6 +20,7 @@ jobs:
     permissions:
       contents: write
       packages: write
+      id-token: write
 
     steps:
       - uses: actions/checkout@v4
@@ -46,8 +49,18 @@ jobs:
       - name: Pack
         run: dotnet pack ${{ env.PROJECT_PATH }} --configuration ${{ env.BUILD_CONFIGURATION }} --no-build --output ${{ env.OUTPUT_PATH }}
 
+      # Trusted publishing (https://learn.microsoft.com/nuget/nuget-org/trusted-publishing): nuget.org
+      # trades this job's GitHub OIDC token for an API key that expires after an hour, so the login sits
+      # right before the push. The nuget.org policy names this repository and the file name
+      # publish.yml - renaming this file stops publishing until the policy is updated to match.
+      - name: NuGet login (trusted publishing)
+        id: nuget-login
+        uses: NuGet/login@v1
+        with:
+          user: ${{ env.NUGET_USER }}
+
       - name: Publish to NuGet
-        run: dotnet nuget push ${{ env.OUTPUT_PATH }}/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source ${{ env.NUGET_SOURCE }} --skip-duplicate
+        run: dotnet nuget push ${{ env.OUTPUT_PATH }}/*.nupkg --api-key ${{ steps.nuget-login.outputs.NUGET_API_KEY }} --source ${{ env.NUGET_SOURCE }} --skip-duplicate
 
       - name: Publish to GitHub Packages
         run: dotnet nuget push ${{ env.OUTPUT_PATH }}/*.nupkg --api-key ${{ secrets.GITHUB_TOKEN }} --source https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json --skip-duplicate
